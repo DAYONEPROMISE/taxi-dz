@@ -1,0 +1,59 @@
+name: TaxiDZ CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bootstrap Gradle (no wrapper jar in repo)
+        run: |
+          curl -sL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.9/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        run: |
+          SDKMGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null || true
+          "$SDKMGR" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Unit tests
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: gradle :app:lintDebug --stacktrace
+
+      - name: Assemble debug APK
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxidz-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish rolling release
+        if: github.event_name != 'pull_request'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || 'debug-latest' }}
+          allowUpdates: true
+          replacesArtifacts: true
+          name: ${{ github.ref_type == 'tag' && github.ref_name || 'Debug build' }}
+          body: ${{ github.ref_type == 'tag' && 'Versioned TaxiDZ release APK.' || 'Latest TaxiDZ debug APK from main.' }}
+          artifacts: app/build/outputs/apk/debug/app-debug.apk

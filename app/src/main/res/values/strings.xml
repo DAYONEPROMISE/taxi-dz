@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TaxiDZ</string>
+    <string name="switch_lang">عربية</string>
+    <string name="tab_trips">Courses</string>
+    <string name="tab_stats">Gains</string>
+    <string name="tab_fuel">Carburant</string>
+    <string name="departure">Départ</string>
+    <string name="destination">Destination</string>
+    <string name="fare_dzd">Tarif (DA)</string>
+    <string name="add_trip">Ajouter la course</string>
+    <string name="invalid_fare">Montant invalide</string>
+    <string name="invalid_route">Itinéraire incomplet</string>
+    <string name="dzd">DA</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="trips">courses</string>
+    <string name="last_7_days">7 derniers jours</string>
+    <string name="gross">Brut</string>
+    <string name="fuel">Carburant</string>
+    <string name="net">Net</string>
+    <string name="grand_total">Total général</string>
+    <string name="fuel_amount">Montant (DA)</string>
+    <string name="fuel_liters">Litres (optionnel)</string>
+    <string name="fuel_note">Note (optionnel)</string>
+    <string name="add_fuel">Ajouter dépense</string>
+    <string name="invalid_amount">Montant invalide</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TaxiDZ</string>
+    <string name="switch_lang">Français</string>
+    <string name="tab_trips">الرحلات</string>
+    <string name="tab_stats">الأرباح</string>
+    <string name="tab_fuel">الوقود</string>
+    <string name="departure">نقطة الانطلاق</string>
+    <string name="destination">الوجهة</string>
+    <string name="fare_dzd">السعر (دج)</string>
+    <string name="add_trip">إضافة الرحلة</string>
+    <string name="invalid_fare">مبلغ غير صالح</string>
+    <string name="invalid_route">مسار غير مكتمل</string>
+    <string name="dzd">دج</string>
+    <string name="today">اليوم</string>
+    <string name="trips">رحلات</string>
+    <string name="last_7_days">آخر 7 أيام</string>
+    <string name="gross">الإجمالي</string>
+    <string name="fuel">الوقود</string>
+    <string name="net">الصافي</string>
+    <string name="grand_total">المجموع الكلي</string>
+    <string name="fuel_amount">المبلغ (دج)</string>
+    <string name="fuel_liters">اللترات (اختياري)</string>
+    <string name="fuel_note">ملاحظة (اختياري)</string>
+    <string name="add_fuel">إضافة مصروف</string>
+    <string name="invalid_amount">مبلغ غير صالح</string>
+</resources>
