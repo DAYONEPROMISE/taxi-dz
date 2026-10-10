@@ -1,14 +1,18 @@
 package dz.taxidz
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,7 +21,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +39,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -40,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -63,13 +75,23 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             val lang = remember { mutableStateOf(AppLocale.current(this)) }
+            val dark = isSystemInDarkTheme()
+            val context = LocalContext.current
+            val scheme = remember(dark) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                } else {
+                    if (dark) darkColorScheme() else lightColorScheme()
+                }
+            }
             CompositionLocalProvider(
                 LocalLayoutDirection provides if (AppLocale.isRtl(lang.value)) LayoutDirection.Rtl else LayoutDirection.Ltr
             ) {
-                MaterialTheme {
+                MaterialTheme(colorScheme = scheme) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         TaxiDzApp(vm) {
                             val next = if (lang.value == AppLocale.FRENCH) AppLocale.ARABIC else AppLocale.FRENCH
@@ -107,31 +129,35 @@ private fun TaxiDzApp(vm: TaxiDzViewModel, onToggleLang: () -> Unit) {
         },
         bottomBar = {
             NavigationBar {
+                val tripsLabel = stringResource(R.string.tab_trips)
+                val statsLabel = stringResource(R.string.tab_stats)
+                val fuelLabel = stringResource(R.string.tab_fuel)
                 NavigationBarItem(
                     selected = tab == Tab.TRIPS,
                     onClick = { tab = Tab.TRIPS },
-                    label = { Text(stringResource(R.string.tab_trips)) },
-                    icon = { Text("🚕") }
+                    label = { Text(tripsLabel) },
+                    icon = { Icon(Icons.Filled.DirectionsCar, contentDescription = null) }
                 )
                 NavigationBarItem(
                     selected = tab == Tab.STATS,
                     onClick = { tab = Tab.STATS },
-                    label = { Text(stringResource(R.string.tab_stats)) },
-                    icon = { Text("📊") }
+                    label = { Text(statsLabel) },
+                    icon = { Icon(Icons.Filled.BarChart, contentDescription = null) }
                 )
                 NavigationBarItem(
                     selected = tab == Tab.FUEL,
                     onClick = { tab = Tab.FUEL },
-                    label = { Text(stringResource(R.string.tab_fuel)) },
-                    icon = { Text("⛽") }
+                    label = { Text(fuelLabel) },
+                    icon = { Icon(Icons.Filled.LocalGasStation, contentDescription = null) }
                 )
             }
         }
     ) { pad ->
+        val content = Modifier.padding(pad).consumeWindowInsets(pad)
         when (tab) {
-            Tab.TRIPS -> TripsScreen(Modifier.padding(pad), trips, vm::addTrip, vm::deleteTrip)
-            Tab.STATS -> StatsScreen(Modifier.padding(pad), stats)
-            Tab.FUEL -> FuelScreen(Modifier.padding(pad), fuels, vm::addFuel, vm::deleteFuel)
+            Tab.TRIPS -> TripsScreen(content, trips, vm::addTrip, vm::deleteTrip)
+            Tab.STATS -> StatsScreen(content, stats)
+            Tab.FUEL -> FuelScreen(content, fuels, vm::addFuel, vm::deleteFuel)
         }
     }
 }
@@ -185,7 +211,7 @@ private fun TripsScreen(
                                 style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { onDelete(t) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = null)
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_item))
                         }
                     }
                 }
@@ -280,7 +306,7 @@ private fun FuelScreen(
                             Text(fmt.format(Date(f.timestamp)), style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { onDelete(f) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = null)
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_item))
                         }
                     }
                 }
