@@ -18,7 +18,7 @@ jobs:
       - name: Bootstrap Gradle (no wrapper jar in repo)
         run: |
           curl -sL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
-          unzip -q /tmp/gradle.zip -d /tmp
+          unzip -q /tmp/gradle-8.9/bin.zip -d /tmp
           echo "/tmp/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - uses: actions/setup-java@v5
@@ -41,11 +41,36 @@ jobs:
       - name: Assemble debug APK
         run: gradle :app:assembleDebug --stacktrace
 
+      - name: Assemble release APK (unsigned)
+        run: gradle :app:assembleRelease --stacktrace
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: taxidz-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxidz-release
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: Read app version
+        run: |
+          VER=$(grep -hoP 'versionName\s*=?\s*[\x27\x22]\K[0-9.]+' app/build.gradle app/build.gradle.kts 2>/dev/null | head -1)
+          CODE=$(grep -hoP 'versionCode\s*=?\s*\K[0-9]+' app/build.gradle app/build.gradle.kts 2>/dev/null | head -1)
+          echo "APP_VERSION=${VER:-0.0.0}" >> "$GITHUB_ENV"
+          echo "APP_CODE=${CODE:-0}" >> "$GITHUB_ENV"
+
+      - name: Publish release APK to GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: release-v${{ env.APP_VERSION }}-b${{ github.run_number }}
+          allowUpdates: false
+          name: TaxiDZ release APK v${{ env.APP_VERSION }} (build ${{ github.run_number }})
+          body: Release (unsigned, test only) build of TaxiDZ v${{ env.APP_VERSION }}+${{ env.APP_CODE }} from commit ${{ github.sha }}. OpenPencil pass: tab labels as nav icon descriptions. Debug APKs publish under debug-latest as before.
+          artifacts: "app/build/outputs/apk/release/*.apk"
 
       - name: Publish rolling release
         if: github.event_name != 'pull_request'

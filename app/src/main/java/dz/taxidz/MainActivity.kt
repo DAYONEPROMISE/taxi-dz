@@ -136,19 +136,19 @@ private fun TaxiDzApp(vm: TaxiDzViewModel, onToggleLang: () -> Unit) {
                     selected = tab == Tab.TRIPS,
                     onClick = { tab = Tab.TRIPS },
                     label = { Text(tripsLabel) },
-                    icon = { Icon(Icons.Filled.DirectionsCar, contentDescription = null) }
+                    icon = { Icon(Icons.Filled.DirectionsCar, contentDescription = tripsLabel) }
                 )
                 NavigationBarItem(
                     selected = tab == Tab.STATS,
                     onClick = { tab = Tab.STATS },
                     label = { Text(statsLabel) },
-                    icon = { Icon(Icons.Filled.BarChart, contentDescription = null) }
+                    icon = { Icon(Icons.Filled.BarChart, contentDescription = statsLabel) }
                 )
                 NavigationBarItem(
                     selected = tab == Tab.FUEL,
                     onClick = { tab = Tab.FUEL },
                     label = { Text(fuelLabel) },
-                    icon = { Icon(Icons.Filled.LocalGasStation, contentDescription = null) }
+                    icon = { Icon(Icons.Filled.LocalGasStation, contentDescription = fuelLabel) }
                 )
             }
         }
@@ -210,8 +210,8 @@ private fun TripsScreen(
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text("${t.departure} → ${t.destination}", style = MaterialTheme.typography.titleSmall)
-                            Text("${t.fareDzd} $dzd • ${fmt.format(Date(t.timestamp))}",
+                            Text("${t.departure} \u2192 ${t.destination}", style = MaterialTheme.typography.titleSmall)
+                            Text("${t.fareDzd} $dzd \u2022 ${fmt.format(Date(t.timestamp))}",
                                 style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { onDelete(t) }) {
@@ -233,7 +233,7 @@ private fun StatsScreen(modifier: Modifier = Modifier, stats: StatsUi) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.today), style = MaterialTheme.typography.titleMedium)
-                    Text("${stats.todayTotal} $dzd • ${stats.todayCount} ${stringResource(R.string.trips)}",
+                    Text("${stats.todayTotal} $dzd \u2022 ${stats.todayCount} ${stringResource(R.string.trips)}",
                         style = MaterialTheme.typography.headlineSmall)
                 }
             }
@@ -305,8 +305,8 @@ private fun FuelScreen(
                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
                             Text("${f.amountDzd} ${stringResource(R.string.dzd)}" +
-                                (f.liters?.let { " • $it L" } ?: "") +
-                                (f.note.ifBlank { null }?.let { " • $it" } ?: ""),
+                                (f.liters?.let { " \u2022 $it L" } ?: "") +
+                                (f.note.ifBlank { null }?.let { " \u2022 $it" } ?: ""),
                                 style = MaterialTheme.typography.titleSmall)
                             Text(fmt.format(Date(f.timestamp)), style = MaterialTheme.typography.bodySmall)
                         }
