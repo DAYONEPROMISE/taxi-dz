@@ -174,6 +174,10 @@ private fun TripsScreen(
     var fare by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     val fmt = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
+    val deleteLabel = stringResource(R.string.delete_item)
+    val invalidRoute = stringResource(R.string.invalid_route)
+    val invalidFare = stringResource(R.string.invalid_fare)
+    val dzd = stringResource(R.string.dzd)
 
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(from, { from = it }, label = { Text(stringResource(R.string.departure)) }, modifier = Modifier.fillMaxWidth())
@@ -192,9 +196,9 @@ private fun TripsScreen(
                 from = ""; to = ""; fare = ""; error = null
             } else {
                 error = when (err) {
-                    "blank_route" -> stringResource(R.string.invalid_route)
+                    "blank_route" -> invalidRoute
                     "fare_too_big" -> "> 1 000 000"
-                    else -> stringResource(R.string.invalid_fare)
+                    else -> invalidFare
                 }
             }
         }, modifier = Modifier.fillMaxWidth()) {
@@ -207,11 +211,11 @@ private fun TripsScreen(
                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
                             Text("${t.departure} → ${t.destination}", style = MaterialTheme.typography.titleSmall)
-                            Text("${t.fareDzd} ${stringResource(R.string.dzd)} • ${fmt.format(Date(t.timestamp))}",
+                            Text("${t.fareDzd} $dzd • ${fmt.format(Date(t.timestamp))}",
                                 style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { onDelete(t) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_item))
+                            Icon(Icons.Filled.Delete, contentDescription = deleteLabel)
                         }
                     }
                 }
@@ -268,6 +272,7 @@ private fun FuelScreen(
     var note by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
     val fmt = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
+    val deleteLabel = stringResource(R.string.delete_item)
 
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -306,7 +311,7 @@ private fun FuelScreen(
                             Text(fmt.format(Date(f.timestamp)), style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { onDelete(f) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_item))
+                            Icon(Icons.Filled.Delete, contentDescription = deleteLabel)
                         }
                     }
                 }
