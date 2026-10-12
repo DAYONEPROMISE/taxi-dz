@@ -25,4 +25,12 @@
     <string name="add_fuel">Ajouter dépense</string>
     <string name="invalid_amount">Montant invalide</string>
     <string name="delete_item">Supprimer</string>
+    <string name="empty_trips_title">Aucune course</string>
+    <string name="empty_trips_hint">Ajoutez votre première course : départ, destination et tarif.</string>
+    <string name="empty_fuel_title">Aucune dépense</string>
+    <string name="empty_fuel_hint">Notez vos pleins de carburant pour suivre votre coût au kilomètre.</string>
+    <string name="stats_empty_title">Pas encore de données</string>
+    <string name="stats_empty_hint">Vos gains apparaîtront ici après votre première course.</string>
+    <string name="fare_too_big">Montant trop élevé</string>
+    <string name="week_chart">Revenus des 7 derniers jours</string>
 </resources>

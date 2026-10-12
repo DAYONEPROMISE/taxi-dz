@@ -1,24 +1,27 @@
 package dz.taxidz
 
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,10 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -50,11 +51,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dz.taxidz.data.FuelExpense
@@ -62,10 +64,15 @@ import dz.taxidz.data.Trip
 import dz.taxidz.logic.EarningsCalculator
 import dz.taxidz.ui.AppLocale
 import dz.taxidz.ui.StatsUi
+import dz.taxidz.ui.TaxiDzTheme
 import dz.taxidz.ui.TaxiDzViewModel
+import dz.taxidz.ui.TaxiEmptyState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+/** French grouping for DA readouts (34 200 DA). */
+private fun fmtAmount(n: Int): String = String.format(Locale.FRANCE, "%,d", n)
 
 class MainActivity : ComponentActivity() {
     private val vm: TaxiDzViewModel by viewModels()
@@ -80,18 +87,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val lang = remember { mutableStateOf(AppLocale.current(this)) }
             val dark = isSystemInDarkTheme()
-            val context = LocalContext.current
-            val scheme = remember(dark) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-                } else {
-                    if (dark) darkColorScheme() else lightColorScheme()
-                }
-            }
             CompositionLocalProvider(
                 LocalLayoutDirection provides if (AppLocale.isRtl(lang.value)) LayoutDirection.Rtl else LayoutDirection.Ltr
             ) {
-                MaterialTheme(colorScheme = scheme) {
+                TaxiDzTheme(dark = dark) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         TaxiDzApp(vm) {
                             val next = if (lang.value == AppLocale.FRENCH) AppLocale.ARABIC else AppLocale.FRENCH
@@ -120,6 +119,11 @@ private fun TaxiDzApp(vm: TaxiDzViewModel, onToggleLang: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 actions = {
                     TextButton(onClick = onToggleLang) {
                         Text(stringResource(R.string.switch_lang))
@@ -177,6 +181,7 @@ private fun TripsScreen(
     val deleteLabel = stringResource(R.string.delete_item)
     val invalidRoute = stringResource(R.string.invalid_route)
     val invalidFare = stringResource(R.string.invalid_fare)
+    val fareTooBig = stringResource(R.string.fare_too_big)
     val dzd = stringResource(R.string.dzd)
 
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -197,7 +202,7 @@ private fun TripsScreen(
             } else {
                 error = when (err) {
                     "blank_route" -> invalidRoute
-                    "fare_too_big" -> "> 1 000 000"
+                    "fare_too_big" -> fareTooBig
                     else -> invalidFare
                 }
             }
@@ -205,17 +210,25 @@ private fun TripsScreen(
             Text(stringResource(R.string.add_trip))
         }
         Spacer(Modifier.height(4.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(trips, key = { it.id }) { t ->
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text("${t.departure} \u2192 ${t.destination}", style = MaterialTheme.typography.titleSmall)
-                            Text("${t.fareDzd} $dzd \u2022 ${fmt.format(Date(t.timestamp))}",
-                                style = MaterialTheme.typography.bodySmall)
-                        }
-                        IconButton(onClick = { onDelete(t) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = deleteLabel)
+        if (trips.isEmpty()) {
+            TaxiEmptyState(
+                icon = Icons.Filled.DirectionsCar,
+                title = stringResource(R.string.empty_trips_title),
+                hint = stringResource(R.string.empty_trips_hint)
+            )
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(trips, key = { it.id }) { t ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(Modifier.weight(1f)) {
+                                Text("${t.departure} \u2192 ${t.destination}", style = MaterialTheme.typography.titleSmall)
+                                Text("${t.fareDzd} $dzd \u2022 ${fmt.format(Date(t.timestamp))}",
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+                            IconButton(onClick = { onDelete(t) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = deleteLabel)
+                            }
                         }
                     }
                 }
@@ -228,33 +241,102 @@ private fun TripsScreen(
 private fun StatsScreen(modifier: Modifier = Modifier, stats: StatsUi) {
     val dzd = stringResource(R.string.dzd)
     val dayFmt = remember { SimpleDateFormat("EEE dd/MM", Locale.getDefault()) }
+    if (stats.grandTotal == 0 && stats.weekTotal == 0 && stats.last7.isEmpty()) {
+        TaxiEmptyState(
+            icon = Icons.Filled.BarChart,
+            title = stringResource(R.string.stats_empty_title),
+            hint = stringResource(R.string.stats_empty_hint)
+        )
+        return
+    }
+    val maxDay = stats.last7.maxOfOrNull { it.totalDzd } ?: 0
     LazyColumn(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.today), style = MaterialTheme.typography.titleMedium)
-                    Text("${stats.todayTotal} $dzd \u2022 ${stats.todayCount} ${stringResource(R.string.trips)}",
-                        style = MaterialTheme.typography.headlineSmall)
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        stringResource(R.string.net).uppercase() + " — " + stringResource(R.string.last_7_days),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Text(
+                        fmtAmount(stats.weekNet) + " $dzd",
+                        style = MaterialTheme.typography.displaySmall
+                    )
+                    Text(
+                        stringResource(R.string.gross) + " " + fmtAmount(stats.weekTotal) + " • " +
+                            stringResource(R.string.fuel) + " " + fmtAmount(stats.weekFuel),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
         }
         item {
             Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.last_7_days), style = MaterialTheme.typography.titleMedium)
-                    Text("${stringResource(R.string.gross)}: ${stats.weekTotal} $dzd")
-                    Text("${stringResource(R.string.fuel)}: ${stats.weekFuel} $dzd")
-                    Text("${stringResource(R.string.net)}: ${stats.weekNet} $dzd",
-                        style = MaterialTheme.typography.titleLarge)
-                    Text("${stringResource(R.string.grand_total)}: ${stats.grandTotal} $dzd",
-                        style = MaterialTheme.typography.bodySmall)
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.week_chart), style = MaterialTheme.typography.titleSmall)
+                    Row(
+                        Modifier.fillMaxWidth().height(88.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        stats.last7.forEach { d ->
+                            val frac = if (maxDay > 0) d.totalDzd.toFloat() / maxDay.toFloat() else 0f
+                            Box(
+                                Modifier.weight(1f).fillMaxHeight(if (frac > 0f) frac.coerceAtLeast(0.06f) else 0.02f)
+                                    .background(
+                                        if (d.totalDzd > 0) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                                    )
+                            )
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        stats.last7.forEach { d ->
+                            Text(
+                                dayFmt.format(Date(d.dayStartMillis)).substring(0, 3),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        stringResource(R.string.today) + " — ${stats.todayTotal} $dzd • ${stats.todayCount} ${stringResource(R.string.trips)}",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.gross), style = MaterialTheme.typography.bodyMedium)
+                        Text("${fmtAmount(stats.weekTotal)} $dzd", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.fuel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.tertiary)
+                        Text("− ${fmtAmount(stats.weekFuel)} $dzd", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.tertiary)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(stringResource(R.string.grand_total), style = MaterialTheme.typography.bodyMedium)
+                        Text("${fmtAmount(stats.grandTotal)} $dzd", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }
         items(stats.last7, key = { it.dayStartMillis }) { d ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(dayFmt.format(Date(d.dayStartMillis)))
-                Text("${d.totalDzd} $dzd (${d.tripCount})")
+                Text("${fmtAmount(d.totalDzd)} $dzd (${d.tripCount})")
             }
         }
     }
@@ -299,8 +381,15 @@ private fun FuelScreen(
             Text(stringResource(R.string.add_fuel))
         }
         Spacer(Modifier.height(4.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(fuels, key = { it.id }) { f ->
+        if (fuels.isEmpty()) {
+            TaxiEmptyState(
+                icon = Icons.Filled.LocalGasStation,
+                title = stringResource(R.string.empty_fuel_title),
+                hint = stringResource(R.string.empty_fuel_hint)
+            )
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(fuels, key = { it.id }) { f ->
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
@@ -316,6 +405,7 @@ private fun FuelScreen(
                     }
                 }
             }
+        }
         }
     }
 }

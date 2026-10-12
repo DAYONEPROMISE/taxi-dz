@@ -25,4 +25,12 @@
     <string name="add_fuel">إضافة مصروف</string>
     <string name="invalid_amount">مبلغ غير صالح</string>
     <string name="delete_item">حذف</string>
+    <string name="empty_trips_title">لا توجد رحلة</string>
+    <string name="empty_trips_hint">أضف أول رحلة: الانطلاق، الوجهة والسعر.</string>
+    <string name="empty_fuel_title">لا توجد مصروفات</string>
+    <string name="empty_fuel_hint">سجّل مصاريف الوقود لمتابعة تكلفة الكيلومتر.</string>
+    <string name="stats_empty_title">لا توجد بيانات بعد</string>
+    <string name="stats_empty_hint">ستظهر أرباحك هنا بعد أول رحلة.</string>
+    <string name="fare_too_big">المبلغ كبير جدًا</string>
+    <string name="week_chart">إيرادات آخر 7 أيام</string>
 </resources>
