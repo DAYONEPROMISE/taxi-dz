@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -124,36 +125,39 @@ private fun TaxiDzApp(vm: TaxiDzViewModel, onToggleLang: () -> Unit) {
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = onToggleLang) {
+                    TextButton(
+                        onClick = onToggleLang,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary)
+                    ) {
                         Text(stringResource(R.string.switch_lang))
                     }
                 }
             }
         },
         bottomBar = {
-            NavigationBar {
-                val tripsLabel = stringResource(R.string.tab_trips)
-                val statsLabel = stringResource(R.string.tab_stats)
-                val fuelLabel = stringResource(R.string.tab_fuel)
-                NavigationBarItem(
-                    selected = tab == Tab.TRIPS,
-                    onClick = { tab = Tab.TRIPS },
-                    label = { Text(tripsLabel) },
-                    icon = { Icon(Icons.Filled.DirectionsCar, contentDescription = tripsLabel) }
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.STATS,
-                    onClick = { tab = Tab.STATS },
-                    label = { Text(statsLabel) },
-                    icon = { Icon(Icons.Filled.BarChart, contentDescription = statsLabel) }
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.FUEL,
-                    onClick = { tab = Tab.FUEL },
-                    label = { Text(fuelLabel) },
-                    icon = { Icon(Icons.Filled.LocalGasStation, contentDescription = fuelLabel) }
-                )
-            }
+                NavigationBar {
+                    Tab.values().forEach { t ->
+                        val label = when (t) {
+                            Tab.TRIPS -> stringResource(R.string.tab_trips)
+                            Tab.STATS -> stringResource(R.string.tab_stats)
+                            Tab.FUEL -> stringResource(R.string.tab_fuel)
+                        }
+                        val icon = when (t) {
+                            Tab.TRIPS -> Icons.Filled.DirectionsCar
+                            Tab.STATS -> Icons.Filled.BarChart
+                            Tab.FUEL -> Icons.Filled.LocalGasStation
+                        }
+                        NavigationBarItem(
+                            selected = tab == t,
+                            onClick = { tab = t },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            label = { Text(label) },
+                            icon = { Icon(icon, contentDescription = label) }
+                        )
+                    }
+                }
         }
     ) { pad ->
         val content = Modifier.padding(pad).consumeWindowInsets(pad)
